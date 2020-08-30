@@ -49,7 +49,12 @@ def eps_data():
                           [StepType.TERMINAL])
     step_types = np.array(step_types, dtype=StepType)
 
+    # episode_infos
+    episode_infos = dict()
+    episode_infos['task_one_hot'] = np.stack([[1, 1]] * len(lens))
+
     return {
+        'episode_infos': episode_infos,
         'env_spec': env_spec,
         'observations': obs,
         'last_observations': last_obs,
@@ -58,7 +63,7 @@ def eps_data():
         'env_infos': env_infos,
         'agent_infos': agent_infos,
         'step_types': step_types,
-        'lengths': lens
+        'lengths': lens,
     }
 
 
@@ -73,6 +78,7 @@ def test_new_eps(eps_data):
     assert t.agent_infos is eps_data['agent_infos']
     assert t.step_types is eps_data['step_types']
     assert t.lengths is eps_data['lengths']
+    assert t.episode_infos is eps_data['episode_infos']
 
 
 def test_lengths_shape_mismatch_eps(eps_data):
@@ -200,6 +206,24 @@ def test_step_types_dtype_mismatch_eps(eps_data):
         del t
 
 
+def test_episode_infos_not_ndarray_eps(eps_data):
+    with pytest.raises(ValueError,
+                       match='entry in episode_infos must be a numpy array'):
+        eps_data['episode_infos']['bar'] = list()
+        t = EpisodeBatch(**eps_data)
+        del t
+
+
+def test_episode_infos_batch_mismatch_eps(eps_data):
+    with pytest.raises(
+            ValueError,
+            match='entry in episode_infos must have a batch dimension'):
+        eps_data['episode_infos']['task_one_hot'] = eps_data['episode_infos'][
+            'task_one_hot'][:-1]
+        t = EpisodeBatch(**eps_data)
+        del t
+
+
 def test_to_epsectory_list(eps_data):
     t = EpisodeBatch(**eps_data)
     t_list = t.to_list()
@@ -284,7 +308,8 @@ def sample_data():
         'reward': rew,
         'env_info': env_infos,
         'agent_info': agent_infos,
-        'step_type': step_type
+        'step_type': step_type,
+        'episode_info': dict(),
     }
 
 
@@ -297,6 +322,7 @@ def test_new_time_step(sample_data):
     assert s.step_type is sample_data['step_type']
     assert s.env_info is sample_data['env_info']
     assert s.agent_info is sample_data['agent_info']
+    assert s.episode_info is sample_data['episode_info']
     del s
 
     obs_space = akro.Box(low=-1, high=10, shape=(4, 3, 2), dtype=np.float32)
@@ -337,17 +363,21 @@ def test_step_type_property_time_step(sample_data):
 
 
 def test_from_env_step_time_step(sample_data):
+    print(sample_data)
     agent_info = sample_data['agent_info']
     last_observation = sample_data['observation']
     observation = sample_data['next_observation']
+    episode_info = sample_data['episode_info']
     time_step = TimeStep(**sample_data)
     del sample_data['agent_info']
     del sample_data['next_observation']
+    del sample_data['episode_info']
     sample_data['observation'] = observation
     env_step = EnvStep(**sample_data)
     time_step_new = TimeStep.from_env_step(env_step=env_step,
                                            last_observation=last_observation,
-                                           agent_info=agent_info)
+                                           agent_info=agent_info,
+                                           episode_info=episode_info)
     assert time_step == time_step_new
 
 
@@ -379,7 +409,12 @@ def batch_data():
     agent_infos['prev_action'] = act
     agent_infos['hidden'] = np.arange(batch_size)
 
+    #episode_infos
+    episode_infos = dict()
+    episode_infos['prev_action'] = act
+
     return {
+        'episode_infos': episode_infos,
         'env_spec': env_spec,
         'observations': obs,
         'next_observations': next_obs,
@@ -393,6 +428,7 @@ def batch_data():
 
 def test_new_ts_batch(batch_data):
     s = TimeStepBatch(**batch_data)
+    assert s.episode_infos is batch_data['episode_infos']
     assert s.env_spec is batch_data['env_spec']
     assert s.observations is batch_data['observations']
     assert s.next_observations is batch_data['next_observations']
@@ -593,6 +629,7 @@ def test_split_batch(batch_data):
         step_types=batch_data['step_types'],
         env_infos=batch_data['env_infos'],
         agent_infos=batch_data['agent_infos'],
+        episode_infos=batch_data['episode_infos'],
     )
     batches = s.split()
 
@@ -614,6 +651,10 @@ def test_split_batch(batch_data):
             assert key in batch_data['agent_infos']
             assert (np.array_equal(batch.agent_infos[key],
                                    [batch_data['agent_infos'][key][i]]))
+        for key in batch.episode_infos:
+            assert key in batch_data['episode_infos']
+            assert (np.array_equal(batch.episode_infos[key],
+                                   [batch_data['episode_infos'][key][i]]))
 
 
 def test_to_time_step_list_batch(batch_data):
@@ -626,6 +667,7 @@ def test_to_time_step_list_batch(batch_data):
         step_types=batch_data['step_types'],
         env_infos=batch_data['env_infos'],
         agent_infos=batch_data['agent_infos'],
+        episode_infos=batch_data['episode_infos'],
     )
     batches = s.to_time_step_list()
 
@@ -647,6 +689,10 @@ def test_to_time_step_list_batch(batch_data):
             assert key in batch_data['agent_infos']
             assert np.array_equal(batch['agent_infos'][key],
                                   [batch_data['agent_infos'][key][i]])
+        for key in batch['episode_infos']:
+            assert key in batch_data['episode_infos']
+            assert np.array_equal(batch['episode_infos'][key],
+                                  [batch_data['episode_infos'][key][i]])
 
 
 def test_from_empty_time_step_list_batch(batch_data):
