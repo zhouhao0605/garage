@@ -77,6 +77,8 @@ class EpisodeBatch(
         lengths (numpy.ndarray): An integer numpy array of shape :math:`(N,)`
             containing the length of each episode in this batch. This may be
             used to reconstruct the individual episodes.
+        episode_infos (numpy.ndarray): A numpy array containing the episode-level 
+            information of each episode.
 
     Raises:
         ValueError: If any of the above attributes do not conform to their
@@ -87,7 +89,7 @@ class EpisodeBatch(
 
     def __new__(cls, env_spec, observations, last_observations, actions,
                 rewards, env_infos, agent_infos, step_types,
-                lengths):  # noqa: D102
+                lengths, episode_infos):  # noqa: D102
         # pylint: disable=too-many-branches
 
         first_observation = observations[0]
@@ -230,9 +232,13 @@ class EpisodeBatch(
                 'step_types tensor must be dtype `StepType`, but got tensor '
                 'of dtype {} instead.'.format(step_types.dtype))
 
+        # TODO: episode_infos 
+        # either numpy array or dict
+        
+
         return super().__new__(EpisodeBatch, env_spec, observations,
                                last_observations, actions, rewards, env_infos,
-                               agent_infos, step_types, lengths)
+                               agent_infos, step_types, lengths, episode_infos)
 
     @classmethod
     def concatenate(cls, *batches):
@@ -259,6 +265,7 @@ class EpisodeBatch(
             k: np.concatenate([b.agent_infos[k] for b in batches])
             for k in batches[0].agent_infos.keys()
         }
+        # TODO: add episode_infos
         return cls(
             env_spec=batches[0].env_spec,
             observations=np.concatenate(
@@ -298,6 +305,7 @@ class EpisodeBatch(
                 lengths=np.asarray([length]))
             episodes.append(eps)
             start = stop
+        # TODO: add episode_infos
         return episodes
 
     def to_list(self):
@@ -327,6 +335,7 @@ class EpisodeBatch(
 
         """
         start = 0
+        # TODO: add episode_infos
         episodes = []
         for i, length in enumerate(self.lengths):
             stop = start + length
@@ -625,7 +634,7 @@ class StepType(enum.IntEnum):
 class TimeStep(
         collections.namedtuple('TimeStep', [
             'env_spec', 'observation', 'action', 'reward', 'next_observation',
-            'env_info', 'agent_info', 'step_type'
+            'env_info', 'agent_info', 'step_type', 'episode_info'
         ])):
     # pylint: disable=missing-return-doc, missing-return-type-doc, missing-param-doc, missing-type-doc  # noqa: E501
     r"""A tuple representing a single TimeStep.
@@ -638,7 +647,7 @@ class TimeStep(
         env_spec (EnvSpec): Specification for the environment from which this
             data was sampled.
         observation (numpy.ndarray): A numpy array of shape :math:`(O^*)`
-            containing the observation for the this time step in the
+            containing the observation for this time step in the
             environment. These must conform to
             :obj:`EnvStep.observation_space`.
             The observation before applying the action.
@@ -665,6 +674,8 @@ class TimeStep(
         step_type (StepType): a :class:`~StepType` enum value. Can be one of
             :attribute:`~StepType.FIRST`, :attribute:`~StepType.MID`,
             :attribute:`~StepType.TERMINAL`, or :attribute:`~StepType.TIMEOUT`.
+        episode_info (dict): A dict of episode-level information.
+            It contains information of the entire episode.
 
     """
 
@@ -695,7 +706,7 @@ class TimeStep(
             is StepType.TIMEOUT
 
     @classmethod
-    def from_env_step(cls, env_step, last_observation, agent_info):
+    def from_env_step(cls, env_step, last_observation, agent_info, episode_info):
         """Create a TimeStep from a EnvStep.
 
         Args:
@@ -718,7 +729,8 @@ class TimeStep(
                    next_observation=env_step.observation,
                    env_info=env_step.env_info,
                    agent_info=agent_info,
-                   step_type=env_step.step_type)
+                   step_type=env_step.step_type,
+                   episode_info=episode_info)
 
 
 class InOutSpec:
@@ -758,7 +770,8 @@ class InOutSpec:
 class TimeStepBatch(
         collections.namedtuple('TimeStepBatch', [
             'env_spec', 'observations', 'actions', 'rewards',
-            'next_observations', 'env_infos', 'agent_infos', 'step_types'
+            'next_observations', 'env_infos', 'agent_infos', 'step_types', 
+            'episode_info'
         ])):
     # pylint: disable=missing-param-doc, missing-type-doc
     """A tuple representing a batch of TimeSteps.
@@ -785,6 +798,10 @@ class TimeStepBatch(
         step_types (numpy.ndarray): A numpy array of `StepType with shape (
             batch_size,) containing the time step types for all transitions in
             this batch.
+        episode_info (dict): A dict of episode-level information.
+            It contains information of the entire episode， which could be
+            needed to determine the first action (e.g. in the case of
+            goal-conditioned or MTRL.)
 
     Raises:
         ValueError: If any of the above attributes do not conform to their
@@ -795,7 +812,7 @@ class TimeStepBatch(
 
     def __new__(cls, env_spec, observations, actions, rewards,
                 next_observations, env_infos, agent_infos,
-                step_types):  # noqa: D102
+                step_types, episode_infos):  # noqa: D102
         # pylint: disable=missing-return-doc, missing-return-type-doc,
         # pylint: disable=too-many-branches
 
@@ -929,10 +946,25 @@ class TimeStepBatch(
                     'dimension of '
                     'length {}, but got key {} with batch size {} instead.'.
                     format(inferred_batch_size, key, val.shape[0]))
+        
+        # TODO: figure out if episode_info is batch or not
+        # episode_info
+        for key, val in episode_infos.items():
+            if (isinstance(val, dict)):
+                raise ValueError(
+                    'Each entry in episode_infos must have a batch '
+                    'dimension of '
+                    'length {}, but got key {} with batch size {} instead.'.
+                    format(inferred_batch_size, key, val.shape[0]))
+        # if not isinstance(episode_info, dict):
+        #     raise ValueError(
+        #         'episode_info must be a numpy array or dictionary, 
+        #         'but got value with type {} instead.'
+        #         'instead'.format((type(episode_info))))
 
         return super().__new__(TimeStepBatch, env_spec, observations, actions,
                                rewards, next_observations, env_infos,
-                               agent_infos, step_types)
+                               agent_infos, step_types, episode_infos)
 
     @classmethod
     def concatenate(cls, *batches):
@@ -960,6 +992,10 @@ class TimeStepBatch(
             k: np.concatenate([b.agent_infos[k] for b in batches])
             for k in batches[0].agent_infos.keys()
         }
+        episode_infos = {
+            k: np.concatenate([b.episode_infos[k] for b in batches])
+            for k in batches[0].episode_infos.keys()
+        }
         return cls(
             env_spec=batches[0].env_spec,
             observations=np.concatenate(
@@ -970,7 +1006,8 @@ class TimeStepBatch(
                 [batch.next_observations for batch in batches]),
             env_infos=env_infos,
             agent_infos=agent_infos,
-            step_types=np.concatenate([batch.step_types for batch in batches]))
+            step_types=np.concatenate([batch.step_types for batch in batches])
+            episode_infos=episode_infos)
 
     def split(self):
         """Split a :class:`~TimeStepBatch` into a list of :class:`~TimeStepBatch`s.
@@ -999,7 +1036,12 @@ class TimeStepBatch(
                     k: np.asarray([v[i]])
                     for (k, v) in self.agent_infos.items()
                 },
-                step_types=np.asarray([self.step_types[i]], dtype=StepType))
+                step_types=np.asarray([self.step_types[i]], dtype=StepType),
+                episode_infos={
+                    k: np.asarray([v[i]])
+                    for (k, v) in self.episode_infos.items()
+                }
+            )
             time_steps.append(time_step)
         return time_steps
 
