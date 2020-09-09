@@ -170,7 +170,7 @@ class NPO(RLAlgorithm):
         """Obtain samplers and start actual training for each epoch.
 
         Args:
-            runner (LocalRunner): Experiment runner, which rovides services
+            runner (LocalRunner): Experiment runner, which provides services
                 such as snapshotting and sampler control.
 
         Returns:
@@ -207,6 +207,7 @@ class NPO(RLAlgorithm):
                 rewards=path['rewards'],
                 env_infos=path['env_infos'],
                 agent_infos=path['agent_infos'],
+                episode_infos=path['episode_infos'],
                 dones=np.array([
                     step_type == StepType.TERMINAL
                     for step_type in path['step_types']

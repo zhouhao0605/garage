@@ -42,6 +42,8 @@ def rollout(env,
                 non-flattened `agent_info` arrays.
             * env_infos(Dict[str, np.array]): Dictionary of stacked,
                 non-flattened `env_info` arrays.
+            * episode_infos(Dict[str, np.array]): Dictionary of stacked,
+                non-flattened `episode_info` arrays.
             * dones(np.array): Array of termination signals.
 
     """
@@ -49,7 +51,8 @@ def rollout(env,
     env_steps = []
     agent_infos = []
     observations = []
-    last_obs = env.reset()[0]
+    episode_infos = []
+    last_obs, episode_info = env.reset()
     agent.reset()
     episode_length = 0
     if animated:
@@ -62,6 +65,7 @@ def rollout(env,
         env_steps.append(es)
         observations.append(last_obs)
         agent_infos.append(agent_info)
+        episode_infos.append(episode_info)
         episode_length += 1
         if es.last:
             break
@@ -74,6 +78,7 @@ def rollout(env,
         agent_infos=tensor_utils.stack_tensor_dict_list(agent_infos),
         env_infos=tensor_utils.stack_tensor_dict_list(
             [es.env_info for es in env_steps]),
+        episode_infos=tensor_utils.stack_tensor_dict_list(episode_infos),
         dones=np.array([es.terminal for es in env_steps]),
     )
 

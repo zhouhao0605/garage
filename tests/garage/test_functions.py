@@ -52,6 +52,7 @@ def test_log_performance():
                      dtype=bool)
         },
         agent_infos={},
+        episode_infos={},
         lengths=lengths)
 
     log_file = tempfile.NamedTemporaryFile()
@@ -99,6 +100,7 @@ def test_log_multitask_performance_task_name():
             np.array(['env1'] * 10 + ['env2'] * 5 + ['env1'] + ['env3'])
         },
         agent_infos={},
+        episode_infos={},
         lengths=lengths)
 
     log_file = tempfile.NamedTemporaryFile()
@@ -145,6 +147,7 @@ def test_log_multitask_performance_task_id():
             np.array([1] * 10 + [3] * 5 + [1] + [4])
         },
         agent_infos={},
+        episode_infos={},
         lengths=lengths)
 
     log_file = tempfile.NamedTemporaryFile()

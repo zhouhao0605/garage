@@ -81,6 +81,7 @@ class InProgressEpisode:
                                                   dtype=StepType),
                             env_infos=env_infos,
                             agent_infos=agent_infos,
+                            episode_infos=dict(),
                             lengths=np.asarray([len(self.rewards)], dtype='l'))
 
     @property

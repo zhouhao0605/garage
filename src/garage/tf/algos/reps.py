@@ -175,6 +175,7 @@ class REPS(RLAlgorithm):  # noqa: D416
                 rewards=path['rewards'],
                 env_infos=path['env_infos'],
                 agent_infos=path['agent_infos'],
+                episode_infos=path['episode_infos'],
                 dones=np.array([
                     step_type == StepType.TERMINAL
                     for step_type in path['step_types']
