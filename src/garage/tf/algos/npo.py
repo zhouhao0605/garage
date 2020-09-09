@@ -193,10 +193,28 @@ class NPO(RLAlgorithm):
             numpy.float64: Average return.
 
         """
+<<<<<<< b8ff598add8b53c2cc3234819abb2dd55c9fcd94
         # -- Stage: Calculate and pad baselines
         obs = [
             self._baseline.predict({'observations': obs})
             for obs in episodes.observations_list
+=======
+        # -- Stage: Calculate baseline
+        paths = [
+            dict(
+                observations=path['observations'],
+                actions=(
+                    self._env_spec.action_space.flatten_n(  # noqa: E126
+                        path['actions'])),
+                rewards=path['rewards'],
+                env_infos=path['env_infos'],
+                agent_infos=path['agent_infos'],
+                episode_infos=path['episode_infos'],
+                dones=np.array([
+                    step_type == StepType.TERMINAL
+                    for step_type in path['step_types']
+                ])) for path in paths
+>>>>>>> update algos and samplers
         ]
         baselines = episodes.pad_to_last(np.concatenate(obs))
 

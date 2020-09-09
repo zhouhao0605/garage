@@ -44,6 +44,7 @@ class DefaultWorker(Worker):
         self._lengths = []
         self._prev_obs = None
         self._eps_length = 0
+        self._episode_infos = defaultdict(list)
         self.worker_init()
 
     def worker_init(self):
@@ -90,7 +91,10 @@ class DefaultWorker(Worker):
     def start_episode(self):
         """Begin a new episode."""
         self._eps_length = 0
-        self._prev_obs, _ = self.env.reset()
+        self._prev_obs, episode_info = self.env.reset()
+        for k, v in episode_info.items():
+            self._episode_infos[k].append(v)
+
         self.agent.reset()
 
     def step_episode(self):
@@ -151,6 +155,11 @@ class DefaultWorker(Worker):
         for k, v in env_infos.items():
             env_infos[k] = np.asarray(v)
 
+        episode_infos = self._episode_infos
+        self._episode_infos = defaultdict(list)
+        for k, v in episode_infos.items():
+            episode_infos[k] = np.asarray(v)
+
         lengths = self._lengths
         self._lengths = []
         return EpisodeBatch(env_spec=self.env.spec,
@@ -161,7 +170,8 @@ class DefaultWorker(Worker):
                             step_types=np.asarray(step_types, dtype=StepType),
                             env_infos=dict(env_infos),
                             agent_infos=dict(agent_infos),
-                            lengths=np.asarray(lengths, dtype='i'))
+                            lengths=np.asarray(lengths, dtype='i'),
+                            episode_infos=episode_infos)
 
     def rollout(self):
         """Sample a single episode of the agent in the environment.

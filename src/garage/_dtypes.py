@@ -233,7 +233,7 @@ class EpisodeBatch(
                 'step_types tensor must be dtype `StepType`, but got tensor '
                 'of dtype {} instead.'.format(step_types.dtype))
 
-        # TODO: episode_infos
+        # episode_infos
         for key, val in episode_infos.items():
             if not isinstance(val, (dict, np.ndarray)):
                 raise ValueError(
@@ -278,7 +278,6 @@ class EpisodeBatch(
             k: np.concatenate([b.agent_infos[k] for b in batches])
             for k in batches[0].agent_infos.keys()
         }
-        # TODO: add episode_infos
         episode_infos = {
             k: np.concatenate([b.episode_infos[k] for b in batches])
             for k in batches[0].episode_infos.keys()
@@ -327,7 +326,7 @@ class EpisodeBatch(
                                    self.episode_infos, start, stop))
             episodes.append(eps)
             start = stop
-        # TODO: add episode_infos
+
         return episodes
 
     def to_list(self):
@@ -421,7 +420,7 @@ class EpisodeBatch(
                     shape (T,) containing the time step types for all
                     transitions in this batch.
                 *episode_infos (dict[str, np.ndarray]): Dictionary of stacked,
-                    non-flattened `agent_info` arrays.
+                    non-flattened `episode_info` arrays.
         """
         lengths = np.asarray([len(p['rewards']) for p in paths])
         if all(
@@ -975,8 +974,7 @@ class TimeStepBatch(
                     'length {}, but got key {} with batch size {} instead.'.
                     format(inferred_batch_size, key, val.shape[0]))
         
-        # TODO: figure out if episode_info is batch or not
-        # episode_info
+        # episode_infos
         for key, val in episode_infos.items():
             if not isinstance(val, (dict, np.ndarray)):
                 raise ValueError(
