@@ -75,6 +75,7 @@ def slice_episodes(episodes, slice_size):
                     k: v[indices]
                     for (k, v) in eps.agent_infos.items()
                 },
+                episode_infos={},
                 lengths=np.asarray([len(indices)], dtype='l'))
             sliced.append(t)
     return sliced
