@@ -51,9 +51,10 @@ def eps_data():
 
     # episode_infos
     episode_infos = dict()
-
+    episode_infos['task_one_hot'] = np.stack([[1, 1]] * len(lens))
 
     return {
+        'episode_infos': episode_infos,
         'env_spec': env_spec,
         'observations': obs,
         'last_observations': last_obs,
@@ -63,7 +64,6 @@ def eps_data():
         'agent_infos': agent_infos,
         'step_types': step_types,
         'lengths': lens,
-        'episode_infos': episode_infos
     }
 
 
@@ -202,6 +202,24 @@ def test_step_types_shape_mismatch_eps(eps_data):
 def test_step_types_dtype_mismatch_eps(eps_data):
     with pytest.raises(ValueError, match='step_types tensor must be dtype'):
         eps_data['step_types'] = eps_data['step_types'].astype(np.float32)
+        t = EpisodeBatch(**eps_data)
+        del t
+
+
+def test_episode_infos_not_ndarray_eps(eps_data):
+    with pytest.raises(ValueError,
+                       match='entry in episode_infos must be a numpy array'):
+        eps_data['episode_infos']['bar'] = list()
+        t = EpisodeBatch(**eps_data)
+        del t
+
+
+def test_episode_infos_batch_mismatch_eps(eps_data):
+    with pytest.raises(
+            ValueError,
+            match='entry in episode_infos must have a batch dimension'):
+        eps_data['episode_infos']['task_one_hot'] = eps_data['episode_infos'][
+            'task_one_hot'][:-1]
         t = EpisodeBatch(**eps_data)
         del t
 
@@ -445,8 +463,10 @@ def batch_data():
 
     #episode_infos
     episode_infos = dict()
+    episode_infos['prev_action'] = act
 
     return {
+        'episode_infos': episode_infos,
         'env_spec': env_spec,
         'observations': obs,
         'next_observations': next_obs,
@@ -454,13 +474,13 @@ def batch_data():
         'rewards': rew,
         'env_infos': env_infos,
         'agent_infos': agent_infos,
-        'step_types': step_types,
-        'episode_infos': episode_infos,
+        'step_types': step_types
     }
 
 
 def test_new_ts_batch(batch_data):
     s = TimeStepBatch(**batch_data)
+    assert s.episode_infos is batch_data['episode_infos']
     assert s.env_spec is batch_data['env_spec']
     assert s.observations is batch_data['observations']
     assert s.next_observations is batch_data['next_observations']
@@ -469,7 +489,6 @@ def test_new_ts_batch(batch_data):
     assert s.env_infos is batch_data['env_infos']
     assert s.agent_infos is batch_data['agent_infos']
     assert s.step_types is batch_data['step_types']
-    assert s.episode_infos is batch_data['episode_infos']
 
 
 def test_invalid_inferred_batch_size(batch_data):
@@ -744,6 +763,7 @@ def test_terminals(batch_data):
         step_types=batch_data['step_types'],
         env_infos=batch_data['env_infos'],
         agent_infos=batch_data['agent_infos'],
+        episode_infos=batch_data['episode_infos'],
     )
     assert s.terminals.shape == s.rewards.shape
 
