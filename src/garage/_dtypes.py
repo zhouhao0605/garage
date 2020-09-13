@@ -336,6 +336,8 @@ class EpisodeBatch(
 
         Returns:
             list[dict[str, np.ndarray or dict[str, np.ndarray]]]: Keys:
+                * episode_infos (dict[str, np.ndarray]): Dictionary of stacked,
+                    non-flattened `episode_info` arrays, each of shape (T, S^*).
                 * observations (np.ndarray): Non-flattened array of
                     observations. Has shape (T, S^*) (the unflattened state
                     space of the current environment).  observations[i] was
@@ -355,8 +357,6 @@ class EpisodeBatch(
                 * step_types (numpy.ndarray): A numpy array of `StepType with
                     shape (T,) containing the time step types for all
                     transitions in this batch.
-                * episode_infos (dict[str, np.ndarray]): Dictionary of stacked,
-                    non-flattened `episode_info` arrays.
 
         """
         start = 0
@@ -397,7 +397,11 @@ class EpisodeBatch(
                 this data was sampled.
             paths (list[dict[str, np.ndarray or dict[str, np.ndarray]]]): Keys:
                 *episode_infos (dict[str, np.ndarray]): Dictionary of stacked,
+<<<<<<< ef1fae7a4e931d1e3cccdd0d9c286d63618c9a52
                     non-flattened `episode_info` arrays.
+=======
+                    non-flattened `episode_info` arrays, each of shape (T, S^*).
+>>>>>>> update episode_info shape in docs
                 * observations (np.ndarray): Non-flattened array of
                     observations. Typically has shape (T, S^*) (the unflattened
                     state space of the current environment). observations[i]
