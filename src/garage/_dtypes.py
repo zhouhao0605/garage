@@ -336,7 +336,7 @@ class EpisodeBatch(
         Returns:
             list[dict[str, np.ndarray or dict[str, np.ndarray]]]: Keys:
                 * episode_infos (dict[str, np.ndarray]): Dictionary of stacked,
-                    non-flattened `episode_info` arrays.
+                    non-flattened `episode_info` arrays, each of shape (T, S^*).
                 * observations (np.ndarray): Non-flattened array of
                     observations. Has shape (T, S^*) (the unflattened state
                     space of the current environment).  observations[i] was
@@ -396,7 +396,7 @@ class EpisodeBatch(
                 this data was sampled.
             paths (list[dict[str, np.ndarray or dict[str, np.ndarray]]]): Keys:
                 *episode_infos (dict[str, np.ndarray]): Dictionary of stacked,
-                    non-flattened `episode_info` arrays, each of shape (N, S^*).
+                    non-flattened `episode_info` arrays, each of shape (T, S^*).
                 * observations (np.ndarray): Non-flattened array of
                     observations. Typically has shape (T, S^*) (the unflattened
                     state space of the current environment). observations[i]
