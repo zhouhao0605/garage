@@ -240,9 +240,9 @@ class EpisodeBatch(
         for key, val in episode_infos.items():
             if not isinstance(val, (dict, np.ndarray)):
                 raise ValueError(
-                    'Each entry in episode_infos must be a numpy array or '
-                    'dictionary, but got key {} with value type {} instead.'
-                    'instead'.format(key, type(val)))
+                    'Each entry in episode_infos must be a numpy array,'
+                    'but got key {} with value type {} instead.'.format(
+                        key, type(val)))
             if (isinstance(val, np.ndarray) and val.shape[0] != len(lengths)):
                 raise ValueError(
                     'Each entry in episode_infos must have a batch dimension of '
@@ -987,9 +987,9 @@ class TimeStepBatch(
         for key, val in episode_infos.items():
             if not isinstance(val, (dict, np.ndarray)):
                 raise ValueError(
-                    'Each entry in episode_infos must be a numpy array or '
-                    'dictionary, but got key {} with value type {} instead.'
-                    'instead'.format(key, type(val)))
+                    'Each entry in episode_infos must be a numpy array, '
+                    'but got key {} with value type {} instead.'.format(
+                        key, type(val)))
 
             if (isinstance(val, np.ndarray)
                     and val.shape[0] != inferred_batch_size):
