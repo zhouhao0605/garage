@@ -94,12 +94,12 @@ class Plotter:
                             msgs[msg.op] = msg
 
                     if Op.STOP in msgs:
-                        self.queue.task_done()
+                        self.queue.task_done() # TODO
                         break
                     if Op.UPDATE in msgs:
                         self._env, self._policy = msgs[Op.UPDATE].args
-                        self.queue.task_done()
-                    if Op.DEMO in msgs:
+                        self.queue.task_done() # TODO
+                    if Op.DEMO in msgs: # TODO
                         param_values, max_length = msgs[Op.DEMO].args
                         self._policy.set_param_values(param_values)
                         initial_rollout = False
@@ -108,7 +108,7 @@ class Plotter:
                                      max_episode_length=max_length,
                                      animated=True,
                                      speedup=5)
-                        self.queue.task_done()
+                        self.queue.task_done() # TODO
                     else:
                         if max_length:
                             self.rollout(self._env,
@@ -128,6 +128,7 @@ class Plotter:
             self.queue.put(Message(op=Op.STOP, args=None, kwargs=None))
             self.queue.join()
             self.worker_thread.join()
+            # TODO
 
     @staticmethod
     def get_plotters():

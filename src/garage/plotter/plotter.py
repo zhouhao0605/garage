@@ -5,6 +5,9 @@ from enum import Enum
 from multiprocessing import JoinableQueue, Process
 import platform
 from threading import Thread
+import contextlib
+
+import tensorflow as tf
 
 import numpy as np
 
@@ -12,6 +15,9 @@ from garage import rollout
 
 __all__ = ['Plotter']
 
+@contextlib.contextmanager
+def context_mgr():
+    yield None
 
 class Op(Enum):
     """Messages for the Plotter state machine."""
@@ -35,52 +41,57 @@ class Plotter:
         Plotter.__plotters.append(self)
         self._process = None
         self._queue = None
+        self._env = None
+        self._policy = None
+        self._tf_plot = None
+        self._rollout = None
+        self.sess = None
+        self.graph = None
 
     def _worker_start(self):
-        env = None
-        policy = None
         max_length = None
         initial_rollout = True
         try:
-            # Each iteration will process ALL messages currently in the
-            # queue
-            while True:
-                msgs = {}
-                # If true, block and yield processor
-                if initial_rollout:
-                    msg = self._queue.get()
-                    msgs[msg.op] = msg
-                    # Only fetch the last message of each type
-                    while not self._queue.empty():
+            with self.sess.as_default(), self.sess.graph.as_default() if self._tf_plot else context_mgr():
+                # Each iteration will process ALL messages currently in the
+                # queue
+                while True:
+                    msgs = {}
+                    # If true, block and yield processor
+                    if initial_rollout:
                         msg = self._queue.get()
                         msgs[msg.op] = msg
-                else:
-                    # Only fetch the last message of each type
-                    while not self._queue.empty():
-                        msg = self._queue.get_nowait()
-                        msgs[msg.op] = msg
+                        # Only fetch the last message of each type
+                        while not self._queue.empty():
+                            msg = self._queue.get()
+                            msgs[msg.op] = msg
+                    else:
+                        # Only fetch the last message of each type
+                        while not self._queue.empty():
+                            msg = self._queue.get_nowait()
+                            msgs[msg.op] = msg
 
-                if Op.STOP in msgs:
-                    break
+                    if Op.STOP in msgs:
+                        break
 
-                if Op.UPDATE in msgs:
-                    env, policy = msgs[Op.UPDATE].args
-                elif Op.DEMO in msgs:
-                    param_values, max_length = msgs[Op.DEMO].args
-                    policy.set_param_values(param_values)
-                    initial_rollout = False
-                    rollout(env,
-                            policy,
-                            max_episode_length=max_length,
-                            animated=True,
-                            speedup=5)
-                else:
-                    if max_length:
-                        rollout(env,
-                                policy,
+                    if Op.UPDATE in msgs:
+                        self._env, self._policy = msgs[Op.UPDATE].args
+                    elif Op.DEMO in msgs:
+                        param_values, max_length = msgs[Op.DEMO].args
+                        self._policy.set_param_values(param_values)
+                        initial_rollout = False
+                        self._rollout(self._env,
+                                self._policy,
                                 max_episode_length=max_length,
                                 animated=True,
                                 speedup=5)
+                    else:
+                        if max_length:
+                            self._rollout(self._env,
+                                    self._policy,
+                                    max_episode_length=max_length,
+                                    animated=True,
+                                    speedup=5)
         except KeyboardInterrupt:
             pass
 
@@ -120,10 +131,12 @@ class Plotter:
         else:
             self._process = Process(target=self._worker_start)
         self._process.daemon = True
+        if self._tf_plot:
+            tf.compat.v1.get_variable_scope().reuse_variables()
         self._process.start()
         atexit.register(self.close)
 
-    def init_plot(self, env, policy):
+    def init_plot(self, env, policy, tf_plot=False, sess=None, graph=None, rollout=rollout):
         """Initialize the plotter.
 
         Args:
@@ -134,6 +147,18 @@ class Plotter:
         """
         if not Plotter.enable:
             return
+
+        self._env = env
+        self._tf_plot = tf_plot
+        self._rollout = rollout
+        if tf_plot:
+            self.sess = tf.compat.v1.Session() if sess is None else sess
+            self.graph = tf.compat.v1.get_default_graph() if graph is None else graph
+            with self.sess.as_default(), self.graph.as_default():
+                self._policy = policy.clone('plotter_policy')
+        else:
+            self._policy = policy
+
         if not (self._process and self._queue):
             self._init_worker()
 
@@ -158,6 +183,11 @@ class Plotter:
         """
         if not Plotter.enable:
             return
+        if self._tf_plot:
+            with self.sess.as_default(), self.graph.as_default():
+                self._policy = policy.clone('plotter_policy')
+        else:
+            self._policy = policy
         self._queue.put(
             Message(op=Op.DEMO,
                     args=(policy.get_param_values(), max_length),
