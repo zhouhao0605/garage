@@ -118,9 +118,6 @@ class VecWorker(DefaultWorker):
                 
                 self._prev_obs = np.asarray(obs_list)
                 self._episode_infos = np.array(episode_infos_list)
-
-                    # self._prev_obs = np.asarray(
-                    #     [env.reset()[0] for env in self._envs])
             else:
                 # Avoid calling reset on environments that are already at the
                 # start of an episode.
