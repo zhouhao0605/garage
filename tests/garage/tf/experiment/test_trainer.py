@@ -7,7 +7,7 @@ from garage.experiment import deterministic
 from garage.np.baselines import LinearFeatureBaseline
 from garage.sampler import LocalSampler, MultiprocessingSampler, RaySampler
 from garage.tf.algos import VPG
-from garage.tf.plotter import Plotter
+from garage.plotter import Plotter
 from garage.tf.policies import CategoricalMLPPolicy
 from garage.trainer import TFTrainer
 

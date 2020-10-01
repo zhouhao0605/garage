@@ -807,7 +807,7 @@ class TFTrainer(Trainer):
         self._sampler.start_worker()
         if self._plot:
             # pylint: disable=import-outside-toplevel
-            from garage import Plotter
+            from garage.plotter import Plotter
             self._plotter = Plotter()
             self._plotter.init_plot(self.get_env_copy(),
                                     self._algo.policy,
