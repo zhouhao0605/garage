@@ -461,7 +461,7 @@ def batch_data():
     agent_infos['prev_action'] = act
     agent_infos['hidden'] = np.arange(batch_size)
 
-    #episode_infos
+    # episode_infos
     episode_infos = dict()
     episode_infos['prev_action'] = act
 
@@ -752,6 +752,7 @@ def test_to_time_step_list_batch(batch_data):
             assert key in batch_data['episode_infos']
             assert np.array_equal(batch['episode_infos'][key],
                                   [batch_data['episode_infos'][key][i]])
+
 
 def test_terminals(batch_data):
     s = TimeStepBatch(

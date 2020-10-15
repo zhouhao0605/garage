@@ -48,11 +48,11 @@ class EpisodeBatch(
     +-----------------------+-------------------------------------------------+
 
     Attributes:
-        episode_infos (dict[str, np.ndarray]): A dict of numpy arrays containing
-            the episode-level information of each episode. Each value of this
-            dict should be a numpy array of shape :math:`(N, S^*)`. For example,
-            in goal-conditioned reinforcement learning this could contain the goal
-            state for each episode.
+        episode_infos (dict[str, np.ndarray]): A dict of numpy arrays
+            containing the episode-level information of each episode. Each
+            value of this dict should be a numpy array of shape
+            :math:`(N, S^*)`. For example, in goal-conditioned reinforcement
+            learning this could contain the goal state for each episode.
         env_spec (EnvSpec): Specification for the environment from
             which this data was sampled.
         observations (numpy.ndarray): A numpy array of shape
@@ -72,11 +72,13 @@ class EpisodeBatch(
             in this batch.
         env_infos (dict[str, np.ndarray]): A dict of numpy arrays arbitrary
             environment state information. Each value of this dict should be
-            a numpy array of shape :math:`(N \bullet [T])` or :math:`(N \bullet [T], S^*)`.
-        agent_infos (dict[str, np.ndarray]): A dict of numpy arrays arbitrary agent
-            state information. Each value of this dict should be a numpy array
-            of shape :math:`(N \bullet [T])` or :math:`(N \bullet [T], S^*)`.
-            For example, this may contain the hidden states from an RNN policy.
+            a numpy array of shape :math:`(N \bullet [T])` or
+            :math:`(N \bullet [T], S^*)`.
+        agent_infos (dict[str, np.ndarray]): A dict of numpy arrays arbitrary
+            agent state information. Each value of this dict should be a numpy
+            array of shape :math:`(N \bullet [T])` or
+            :math:`(N \bullet [T], S^*)`. For example, this may contain the
+            hidden states from an RNN policy.
         step_types (numpy.ndarray): A numpy array of `StepType with shape
             :math:`(N,)` containing the time step types for all transitions in
             this batch.
@@ -245,8 +247,8 @@ class EpisodeBatch(
                         key, type(val)))
             if (isinstance(val, np.ndarray) and val.shape[0] != len(lengths)):
                 raise ValueError(
-                    'Each entry in episode_infos must have a batch dimension of '
-                    'length {}, but got key {} with batch size {} instead.'.
+                    'Each entry in episode_infos must have a batch dimension '
+                    'of length {}, but got key {} with batch size {} instead.'.
                     format(len(lengths), key, val.shape[0]))
 
         return super().__new__(EpisodeBatch, episode_infos, env_spec,
@@ -312,20 +314,17 @@ class EpisodeBatch(
         start = 0
         for i, length in enumerate(self.lengths):
             stop = start + length
-            eps = EpisodeBatch(episode_infos=slice_nested_dict(
-                self.episode_infos, i, i + 1),
-                               env_spec=self.env_spec,
-                               observations=self.observations[start:stop],
-                               last_observations=np.asarray(
-                                   [self.last_observations[i]]),
-                               actions=self.actions[start:stop],
-                               rewards=self.rewards[start:stop],
-                               env_infos=slice_nested_dict(
-                                   self.env_infos, start, stop),
-                               agent_infos=slice_nested_dict(
-                                   self.agent_infos, start, stop),
-                               step_types=self.step_types[start:stop],
-                               lengths=np.asarray([length]))
+            eps = EpisodeBatch(
+                episode_infos=slice_nested_dict(self.episode_infos, i, i + 1),
+                env_spec=self.env_spec,
+                observations=self.observations[start:stop],
+                last_observations=np.asarray([self.last_observations[i]]),
+                actions=self.actions[start:stop],
+                rewards=self.rewards[start:stop],
+                env_infos=slice_nested_dict(self.env_infos, start, stop),
+                agent_infos=slice_nested_dict(self.agent_infos, start, stop),
+                step_types=self.step_types[start:stop],
+                lengths=np.asarray([length]))
             episodes.append(eps)
             start = stop
 
@@ -337,7 +336,8 @@ class EpisodeBatch(
         Returns:
             list[dict[str, np.ndarray or dict[str, np.ndarray]]]: Keys:
                 * episode_infos (dict[str, np.ndarray]): Dictionary of stacked,
-                    non-flattened `episode_info` arrays, each of shape (T, S^*).
+                    non-flattened `episode_info` arrays, each of shape
+                    (T, S^*).
                 * observations (np.ndarray): Non-flattened array of
                     observations. Has shape (T, S^*) (the unflattened state
                     space of the current environment).  observations[i] was
@@ -399,7 +399,8 @@ class EpisodeBatch(
                 this data was sampled.
             paths (list[dict[str, np.ndarray or dict[str, np.ndarray]]]): Keys:
                 *episode_infos (dict[str, np.ndarray]): Dictionary of stacked,
-                    non-flattened `episode_info` arrays, each of shape (T, S^*).
+                    non-flattened `episode_info` arrays, each of shape
+                    (T, S^*).
                 * observations (np.ndarray): Non-flattened array of
                     observations. Typically has shape (T, S^*) (the unflattened
                     state space of the current environment). observations[i]
@@ -676,9 +677,9 @@ class TimeStep(
 
     Attributes:
         episode_info (dict[str, np.ndarray]): A dict of numpy arrays of shape
-            :math:`(S*^,)` containing episode-level information of each episode.
-            For example, in goal-conditioned reinforcement learning this could
-            contain the goal state for each episode.
+            :math:`(S*^,)` containing episode-level information of each
+            episode. For example, in goal-conditioned reinforcement learning
+            this could contain the goal state for each episode.
         env_spec (EnvSpec): Specification for the environment from which this
             data was sampled.
         observation (numpy.ndarray): A numpy array of shape :math:`(O^*)`
@@ -812,11 +813,11 @@ class TimeStepBatch(
     Data type for off-policy algorithms, imitation learning and batch-RL.
 
     Attributes:
-        episode_infos (dict[str, np.ndarray]): A dict of numpy arrays containing
-            the episode-level information of each episode. Each value of this
-            dict should be a numpy array of shape :math:`(N, S^*)`. For example,
-            in goal-conditioned reinforcement learning this could contain the goal
-            state for each episode.
+        episode_infos (dict[str, np.ndarray]): A dict of numpy arrays
+            containing the episode-level information of each episode.
+            Each value of this dict should be a numpy array of shape
+            :math:`(N, S^*)`. For example, in goal-conditioned reinforcement
+            learning this could contain the goal state for each episode.
         env_spec (EnvSpec): Specification for the environment from
             which this data was sampled.
         observations (numpy.ndarray): Non-flattened array of observations.
@@ -1089,11 +1090,12 @@ class TimeStepBatch(
 
         Returns:
             list[dict[str, np.ndarray or dict[str, np.ndarray]]]: Keys:
-                episode_infos (dict[str, np.ndarray]): A dict of numpy arrays containing
-                    the episode-level information of each episode. Each value of this
-                    dict should be a numpy array of shape :math:`(S^*,)`. For example,
-                    in goal-conditioned reinforcement learning this could contain the goal
-                    state for each episode.
+                episode_infos (dict[str, np.ndarray]): A dict of numpy arrays
+                    containing the episode-level information of each episode.
+                    Each value of this dict should be a numpy array of shape
+                    :math:`(S^*,)`. For example, in goal-conditioned
+                    reinforcement learning this could contain the goal state
+                    for each episode.
                 observations (numpy.ndarray): Non-flattened array of
                     observations.
                     Typically has shape (batch_size, S^*) (the unflattened
@@ -1164,11 +1166,12 @@ class TimeStepBatch(
                 this data was sampled.
             ts_samples (list[dict[str, np.ndarray or dict[str, np.ndarray]]]):
                 keys:
-                * episode_infos (dict[str, np.ndarray]): A dict of numpy arrays containing
-                    the episode-level information of each episode. Each value of this
-                    dict should be a numpy array of shape :math:`(N, S^*)`. For example,
-                    in goal-conditioned reinforcement learning this could contain the goal
-                    state for each episode.
+                * episode_infos (dict[str, np.ndarray]): A dict of numpy arrays
+                    containing the episode-level information of each episode.
+                    Each value of this dict should be a numpy array of shape
+                    :math:`(N, S^*)`. For example, in goal-conditioned
+                    reinforcement learning this could contain the goal state
+                    for each episode.
                 * observations (numpy.ndarray): Non-flattened array of
                     observations.
                     Typically has shape (batch_size, S^*) (the unflattened
