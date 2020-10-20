@@ -1,23 +1,28 @@
 """Visualizes a policy running in an environment, in parallel with training."""
 import atexit
 from collections import namedtuple
+import contextlib
 from enum import Enum
 from multiprocessing import JoinableQueue, Process
 import platform
 from threading import Thread
-import contextlib
-
-import tensorflow as tf
 
 import numpy as np
 
-from garage import rollout
+from garage import rollout as garage_rollout
 
 __all__ = ['Plotter']
 
+
 @contextlib.contextmanager
 def context_mgr():
+    """Context Manager for non-tf plotter.
+
+    Yields:
+        NoneType: None
+    """
     yield None
+
 
 class Op(Enum):
     """Messages for the Plotter state machine."""
@@ -52,7 +57,8 @@ class Plotter:
         max_length = None
         initial_rollout = True
         try:
-            with self.sess.as_default(), self.sess.graph.as_default() if self._tf_plot else context_mgr():
+            with self.sess.as_default(), self.sess.graph.as_default(
+            ) if self._tf_plot else context_mgr():
                 # Each iteration will process ALL messages currently in the
                 # queue
                 while True:
@@ -81,17 +87,17 @@ class Plotter:
                         self._policy.set_param_values(param_values)
                         initial_rollout = False
                         self._rollout(self._env,
-                                self._policy,
-                                max_episode_length=max_length,
-                                animated=True,
-                                speedup=5)
+                                      self._policy,
+                                      max_episode_length=max_length,
+                                      animated=True,
+                                      speedup=5)
                     else:
                         if max_length:
                             self._rollout(self._env,
-                                    self._policy,
-                                    max_episode_length=max_length,
-                                    animated=True,
-                                    speedup=5)
+                                          self._policy,
+                                          max_episode_length=max_length,
+                                          animated=True,
+                                          speedup=5)
         except KeyboardInterrupt:
             pass
 
@@ -132,17 +138,28 @@ class Plotter:
             self._process = Process(target=self._worker_start)
         self._process.daemon = True
         if self._tf_plot:
+            import tensorflow as tf  # pylint: disable=import-outside-toplevel
             tf.compat.v1.get_variable_scope().reuse_variables()
         self._process.start()
         atexit.register(self.close)
 
-    def init_plot(self, env, policy, tf_plot=False, sess=None, graph=None, rollout=rollout):
+    def init_plot(self,
+                  env,
+                  policy,
+                  tf_plot=False,
+                  sess=None,
+                  graph=None,
+                  rollout=garage_rollout):
         """Initialize the plotter.
 
         Args:
             env (GymEnv): Environment to visualize.
             policy (Policy): Policy to roll out in the
                 visualization.
+            tf_plot (bool): Bool for using tensorflow plotter.
+            sess (tf.Session): The TensorFlow session to use.
+            graph (tf.Graph): The TensorFlow graph to use.
+            rollout (callable): The rollout function to call.
 
         """
         if not Plotter.enable:
@@ -152,8 +169,10 @@ class Plotter:
         self._tf_plot = tf_plot
         self._rollout = rollout
         if tf_plot:
+            import tensorflow as tf  # pylint: disable=import-outside-toplevel
             self.sess = tf.compat.v1.Session() if sess is None else sess
-            self.graph = tf.compat.v1.get_default_graph() if graph is None else graph
+            self.graph = tf.compat.v1.get_default_graph(
+            ) if graph is None else graph
             with self.sess.as_default(), self.graph.as_default():
                 self._policy = policy.clone('plotter_policy')
         else:

@@ -811,6 +811,7 @@ class TFTrainer(Trainer):
             self._plotter = Plotter()
             self._plotter.init_plot(self.get_env_copy(),
                                     self._algo.policy,
+                                    tf_plot=True,
                                     sess=tf.compat.v1.get_default_session())
 
     def initialize_tf_vars(self):
