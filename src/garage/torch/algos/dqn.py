@@ -227,6 +227,9 @@ class DQN(RLAlgorithm):
             tabular.record('QFunction/MaxY', np.max(self._epoch_ys))
             tabular.record('QFunction/AverageAbsY',
                            np.mean(np.abs(self._epoch_ys)))
+            # log noise levels if using a NoisyNet.
+            # If NoisyNet is not used, this does nothing.
+            self._qf.log_noise('QFunction/Noisy-Sigma')
 
     def _optimize_qf(self, timesteps):
         """Perform algorithm optimizing.
